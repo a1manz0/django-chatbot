@@ -5,17 +5,28 @@ from django.contrib.auth.models import User
 from .models import Chat
 from django.utils import timezone
 
-#from langchain import PromptTemplate,HuggingFaceHub,LLMChain
+from langchain import HuggingFaceHub
+from dotenv import load_dotenv
 import os
 
 
-# Create your views here.
+load_dotenv()
+HUGGINGFACEHUB_API_TOKEN = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+llm=HuggingFaceHub(repo_id="OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5",
+                   huggingfacehub_api_token=HUGGINGFACEHUB_API_TOKEN,
+                   model_kwargs={"max_new_tokens":1200})
+#print(llm("Tell me one joke about data scientist"))
 
+def generate_response(message):
+    return llm(message)
+
+
+# Create your views here.
 def chatbot(request):
-    print('heeeeereee')
     if request.method == 'POST':
         message = request.POST.get('message')
-        response = 'hi'#generate_response(message, llm_chain)
+        print(message)
+        response = generate_response(message)
         print(response)
         
         chat = Chat(user=request.user, message=message, response=response, created_at=timezone.now())
@@ -31,7 +42,7 @@ def login(request):
         password = request.POST.get('password')
         user = auth.authenticate(request, username=username, password=password)
         if user is not None:
-            auth.login(request, login)
+            auth.login(request, user)
             return redirect('chatbot')
         else:
             error_message = 'Invalid username or password'
